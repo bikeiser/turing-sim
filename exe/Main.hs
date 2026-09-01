@@ -28,14 +28,13 @@ main = do
     
 runTuring :: String -> String -> IO ()
 runTuring machineText input =
-    case parseString machineText of
-        Left err -> do
-            print err
-            exitFailure
-        Right tm -> do
-            if not (wellFormed tm) then do
-                putStrLn "Invalid Turing Machine description"
-                exitFailure
-            else
-                putStrLn $ intercalate "\n" (map show (turingTrace tm input))
-
+  case parseString machineText of
+    Left err -> do
+      print err
+      exitFailure
+    Right tm -> do
+      case wellFormed tm of
+        Just err -> do
+          putStrLn $ "Invalid Turing Machine description: " ++ show err
+          exitFailure
+        Nothing -> putStrLn $ intercalate "\n" (map show (turingTrace tm input))

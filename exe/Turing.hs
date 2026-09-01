@@ -35,8 +35,8 @@ data TMConfiguration
   | Reject Tape Integer
 
 instance Show TMConfiguration where
-  show (Accept t i) = "accept! " ++ show i ++ "|" ++ t
-  show (Reject t i) = "reject! " ++ show i ++ "|" ++ t
+  show (Accept _ _) = "accept!"
+  show (Reject _ _) = "reject!"
   show Running {left = tmleft, tapeHead = (s, c), right = tmright} =
     reverse tmleft
       ++ (c : tmright)
@@ -44,8 +44,18 @@ instance Show TMConfiguration where
       ++ replicate (length tmleft) ' '
       ++ s
 
-wellFormed :: TuringMachineDesc -> Bool
-wellFormed m = statesOk && alphabetsOk && transitionsOk
+data TuringMachineDescError
+    = InvalidStates
+    | InvalidAlhabets
+    | InvalidTransitions
+    deriving (Show, Eq)
+
+wellFormed :: TuringMachineDesc -> Maybe TuringMachineDescError
+wellFormed m
+    | not statesOk       = Just InvalidStates
+    | not alphabetsOk    = Just InvalidAlhabets
+    | not transitionsOk  = Just InvalidTransitions
+    | otherwise          = Nothing
   where
     statesOk = startState m `elem` states m && all (`elem` states m) (acceptStates m)
     alphabetsOk = all (`elem` tapeAlphabet m) (inputAlphabet m)
