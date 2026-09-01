@@ -206,7 +206,7 @@ equal01 =
   TuringMachineDesc
     { states = ["0", "1", "2", "3", "4"],
       inputAlphabet = "01",
-      tapeAlphabet = "01XY ",
+      tapeAlphabet = "01XYB",
       transitions = ts,
       startState = "0",
       blank = 'B',
