@@ -21,9 +21,9 @@ d=[
 ]
 ```
 
-Currenlty a Turing Machine description is given by two ``variables'': `M`, and `d`. `M` must be given before `d`. Whitespaces are ignored between literals.
+Currently a Turing Machine description is given by two ``variables'': `M`, and `d`. `M` must be given before `d`. Whitespaces are ignored between literals.
 `M` is a 7-tuple with a set of states, input alphabet, tape alphabet, `d`, a starting state, the blank symbol, and a set of accepting states.
-`d` is a partial function describing the tranistions. It is described using a list of input output pairs separated by `->`. The input pair consists of a state and a tape symbol, the output tuple consists of a state, tape symbol, and a direction (L or R).
+`d` is a partial function describing the transitions. It is described using a list of input output pairs separated by `->`. The input pair consists of a state and a tape symbol, the output tuple consists of a state, tape symbol, and a direction (L or R).
 
 
 ## Command usage
