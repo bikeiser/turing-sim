@@ -1,14 +1,64 @@
 module Turing where
 
-type State = String
+data TuringResult = Execution
+  { accept :: Bool,
+    finalTape :: Tape,
+    finalTrace :: [TMConfiguration],
+    steps :: Integer
+  } deriving Show
 
-type Alphabet = [TapeChar]
+run :: TuringMachineDesc -> String -> TuringResult
+run m str =
+  Execution
+    { accept = wasAccept,
+      finalTape = finalTape,
+      finalTrace = init finalTrace,
+      steps = stepsCount
+    }
+  where
+    wasAccept = case last finalTrace of Accept {} -> True; Reject {} -> False; Running {} -> error ""
+    stepsCount = case last finalTrace of
+      Accept _ i -> i
+      Reject _ i -> i
+      Running {} -> error ""
+    finalTape = pruneTape $ case last finalTrace of
+      Accept t _ -> t
+      Reject t _ -> t
+      Running {} -> error ""
 
-type TapeHead = (State, TapeChar)
+    pruneTape :: Tape -> Tape
+    pruneTape t = reverse $ dropBlanks $ reverse $ dropBlanks t
+    
+    dropBlanks :: Tape -> Tape
+    dropBlanks = dropWhile (\c -> c == blank m)
 
-type Transition = (TapeHead, (State, TapeChar, Direction))
+    finalTrace :: [TMConfiguration]
+    finalTrace = it [] initConf
 
-data Direction = TMLeft | TMRight deriving Show
+    it :: [TMConfiguration] -> TMConfiguration -> [TMConfiguration]
+    it cs a@Accept {} = a:cs
+    it cs r@Reject {} = r:cs
+    it cs conf = conf : it cs (step m conf)
+
+    initConf = initConfiguration str
+
+    initConfiguration [] =
+      Running
+        { left = [],
+          tapeHead = (startState m, blank m),
+          right = [],
+          count = 0
+        }
+    initConfiguration (c : cs) =
+      if all (`elem` inputAlphabet m) (c : cs)
+        then
+          Running
+            { left = [],
+              tapeHead = (startState m, c),
+              right = cs,
+              count = 0
+            }
+        else error "invalid input!"
 
 data TuringMachineDesc = TuringMachineDesc
   { states :: [State],
@@ -19,6 +69,16 @@ data TuringMachineDesc = TuringMachineDesc
     blank :: TapeChar,
     acceptStates :: [State]
   } deriving Show
+
+type State = String
+
+type Alphabet = [TapeChar]
+
+type TapeHead = (State, TapeChar)
+
+type Transition = (TapeHead, (State, TapeChar, Direction))
+
+data Direction = TMLeft | TMRight deriving Show
 
 type TapeChar = Char
 
@@ -137,69 +197,6 @@ step m conf@Running {} =
       where
         ls = dropWhile (== blank m) $ left conf
         rs = dropWhile (== blank m) $ right conf
-
-time :: TuringMachineDesc -> String -> Integer
-time m str = case run m str of
-    Running {} -> error ""
-    Accept _ i -> i
-    Reject _ i -> i
-
-
-turingTrace :: TuringMachineDesc -> String -> [TMConfiguration]
-turingTrace m str = it [] initConf
-  where
-    it :: [TMConfiguration] -> TMConfiguration -> [TMConfiguration]
-    it cs a@Accept {} = a:cs
-    it cs r@Reject {} = r:cs
-    it cs conf = conf : it cs (step m conf)
-
-    initConf = initConfiguration str
-
-    initConfiguration [] =
-      Running
-        { left = [],
-          tapeHead = (startState m, blank m),
-          right = [],
-          count = 0
-        }
-    initConfiguration (c : cs) =
-      if all (`elem` inputAlphabet m) (c : cs)
-        then
-          Running
-            { left = [],
-              tapeHead = (startState m, c),
-              right = cs,
-              count = 0
-            }
-        else error "invalid input!"
-
-run :: TuringMachineDesc -> String -> TMConfiguration
-run m str = it initConf
-  where
-    it :: TMConfiguration -> TMConfiguration
-    it a@Accept {} = a
-    it r@Reject {} = r
-    it conf = it (step m conf)
-
-    initConf = initConfiguration str
-
-    initConfiguration [] =
-      Running
-        { left = [],
-          tapeHead = (startState m, blank m),
-          right = [],
-          count = 0
-        }
-    initConfiguration (c : cs) =
-      if all (`elem` inputAlphabet m) (c : cs)
-        then
-          Running
-            { left = [],
-              tapeHead = (startState m, c),
-              right = cs,
-              count = 0
-            }
-        else error "invalid input!"
 
 equal01 :: TuringMachineDesc
 equal01 =
