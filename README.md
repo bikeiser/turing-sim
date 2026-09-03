@@ -1,7 +1,7 @@
 # TuringSim
 Turing Machine simulator written in haskell.
 
-Basic usage: either the Turing Machine description is read from `STDIN` or read from a file using `-f FILENAME`
+Basic usage: either the Turing Machine description is read from `STDIN` or read from a file using `-f FILENAME`. In either case the input to the TM is given as an argument. As an example: `turing-sim -f sample2.txt "0011"` simulates the Turing Machine described in `sample2.txt` with the input `"0011"`.
 
 ## Turing Machine Description Syntax
 ```
