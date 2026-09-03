@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: turing-sim-linux-x86_64
+            binary: turing-sim
+
+          - os: macos-latest
+            artifact: turing-sim-macos-arm64
+            binary: turing-sim
+
+          - os: macos-15-intel
+            artifact: turing-sim-macos-x86_64
+            binary: turing-sim
+
+          - os: windows-latest
+            artifact: turing-sim-windows-x86_64
+            binary: turing-sim.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: "9.6"
+          cabal-version: "3.10"
+
+      - name: Update Cabal package index
+        run: cabal update
+
+      - name: Build
+        run: cabal build exe:turing-sim
+
+      - name: Find binary
+        shell: bash
+        run: |
+          mkdir -p dist
+          BIN="$(cabal list-bin exe:turing-sim)"
+          cp "$BIN" "dist/${{ matrix.binary }}"
+
+      - name: Archive
+        shell: bash
+        run: |
+          cd dist
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a "../${{ matrix.artifact }}.zip" "${{ matrix.binary }}"
+          else
+            tar -czf "../${{ matrix.artifact }}.tar.gz" "${{ matrix.binary }}"
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            *.tar.gz
+            *.zip
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+
