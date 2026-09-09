@@ -89,10 +89,10 @@ main = do
           putStrLn $ "Invalid Turing Machine description: " ++ show err
           exitFailure
         Nothing ->
-          execute op tm
+          executeWithOptions op tm
 
-execute :: Options -> TuringMachineDesc -> IO ()
-execute op desc = do
+executeWithOptions :: Options -> TuringMachineDesc -> IO ()
+executeWithOptions op desc = do
   let result = run desc (input op)
 
   when (onlyTime op) $ do
@@ -100,7 +100,7 @@ execute op desc = do
     exitSuccess
 
   when (trace op) $ 
-    putStrLn $ intercalate "\n" (map show (finalTrace result))
+    putStrLn $ intercalate "\n\n" (finalTrace result)
 
   when (Main.time op) $ 
     putStrLn $ "halted in " ++ show (steps result) ++ " steps"
