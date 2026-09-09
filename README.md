@@ -23,8 +23,20 @@ d=[
 
 Currently a Turing Machine description is given by two ``variables'': `M`, and `d`. `M` must be given before `d`. Whitespaces are ignored between literals.
 `M` is a 7-tuple with a set of states, input alphabet, tape alphabet, `d`, a starting state, the blank symbol, and a set of accepting states.
-`d` is a partial function describing the transitions. It is described using a list of input output pairs separated by `->`. The input pair consists of a state and a tape symbol, the output tuple consists of a state, tape symbol, and a direction (L or R).
+`d` is a partial function describing the transitions. It is described using a list of input output pairs separated by `->`. The input pair consists of a state and a tape symbol, the output tuple consists of a state, tape symbol, and a direction (L, R, or S), where S is for stay.
 
+### k-Tape Turing Machine
+There is support for k-Tape Turing Machines, the syntax is as follows:
+```
+2M=({"0", "1", "2"},{'0', '1'},{'0', '1', 'X', 'Y', 'B'},d,"0",'B',{"2"})
+d=[ 
+    ("0", ('0', 'B')) -> ("0", ('B', '0'), (R, R)),
+    ("0", ('1', 'B')) -> ("1", ('1', 'B'), (S, L)),
+    ("1", ('1', '0')) -> ("1", ('B', 'B'), (R, L)),
+    ("1", ('B', 'B')) -> ("2", ('B', 'B'), (S, S))
+]
+```
+where M is prefixed by the value of k. The transition function is also modified to take a k-tuple for both input symbols, and output symbols and directions.
 
 ## Command usage
 ```
