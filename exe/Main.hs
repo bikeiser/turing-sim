@@ -91,9 +91,12 @@ main = do
         Nothing ->
           executeWithOptions op tm
 
-executeWithOptions :: Options -> TuringMachineDesc -> IO ()
+executeWithOptions :: Options -> KTuringMachineDesc -> IO ()
 executeWithOptions op desc = do
-  let result = run desc (input op)
+  let result =
+        if k desc == 1 -- technically not necessary
+          then run (kOneMachineToTm desc) (input op)
+          else run desc (input op)
 
   when (onlyTime op) $ do
     print (steps result) 

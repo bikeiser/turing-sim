@@ -1,41 +1,47 @@
+{-# LANGUAGE LambdaCase #-}
 module Parser (ParseError, parseString) where
 
 import Turing
 
+import Control.Applicative (optional)
+import Control.Monad (void)
+import Data.Char (isDigit)
 import Text.Parsec
 import Text.Parsec.String
-import Control.Monad (void)
 
-parseString :: String -> Either ParseError TuringMachineDesc
+parseString :: String -> Either ParseError KTuringMachineDesc
 parseString = parse machine ""
 
-machine :: Parser TuringMachineDesc
+machine :: Parser KTuringMachineDesc
 machine = do
-    voidSymbol "M"
-    eq
-    lparan
-    q<-turingStates <* comma
-    inputA<-alphabet <* comma
-    tape<-alphabet <* comma
-    voidSymbol "d" <* comma
-    start<-turingState <* comma
-    blankC<-tapeChar <* comma
-    accept<-turingStates
-    rparan
-    voidSymbol "d"
-    eq
-    d<-turingTransitions
-    eof
+  k <- Control.Applicative.optional num >>= \case Just n -> return n; Nothing -> return 1
+  voidSymbol "M"
+  eq
+  lparan
+  q <- turingStates <* comma
+  inputA <- alphabet <* comma
+  tape <- alphabet <* comma
+  voidSymbol "d" <* comma
+  start <- turingState <* comma
+  blankC <- tapeChar <* comma
+  accept <- turingStates
+  rparan
+  voidSymbol "d"
+  eq
+  d <- turingTransitions k
+  eof
 
-    return $ TuringMachineDesc {
-        states=q,
-        inputAlphabet=inputA,
-        tapeAlphabet=tape,
-        transitions=d,
-        startState=start,
-        blank=blankC,
-        acceptStates=accept
-        }
+  return $
+    KTuringMachineDesc
+      { k = k,
+        kStates = q,
+        kInputAlphabet = inputA,
+        kTapeAlphabet = tape,
+        kTransitions = d,
+        kStartState = start,
+        kBlank = blankC,
+        kAcceptStates = accept
+      }
 
 turingStates :: Parser [Turing.State]
 turingStates = between lcurl rcurl $ turingState `sepBy` comma
@@ -52,27 +58,30 @@ alphabet = between lcurl rcurl $ tapeChar `sepBy` comma
 tapeChar :: Parser TapeChar
 tapeChar = between tick tick $ noneOf "'"
 
-turingTransitions :: Parser [Transition]
-turingTransitions = between lbrack rbrack $ turingTransition `sepBy` comma
+turingTransitions :: Int -> Parser [KTransition]
+turingTransitions k = between lbrack rbrack $ turingTransition k `sepBy` comma
   where
-    turingTransition :: Parser Transition
-    turingTransition = do
+    turingTransition :: Int -> Parser KTransition
+    turingTransition k = do
       lparan
       inputState <- turingState
       comma
-      inputChar <- tapeChar
+      inputChars <- kListOrJustOne k tapeChar
       rparan
       arrow
       lparan
       resultState <- turingState
       comma
-      resultChar <- tapeChar
+      resultChars <- kListOrJustOne k tapeChar 
       comma
-      resultDir <- direction
+      resultDirs <- kListOrJustOne k dir 
       rparan
-      return ((inputState, inputChar), (resultState, resultChar, resultDir))
-    direction :: Parser Direction
-    direction = Parser.left <|> Parser.right
+      return ((inputState, inputChars), (resultState, resultChars, resultDirs))
+
+kListOrJustOne :: Int -> Parser a -> Parser [a]
+kListOrJustOne k p = if k == 1 
+    then (: []) <$> p 
+    else reverse <$> between lparan rparan (flip (:) <$> count (k - 1) (p <* comma) <*> p)
 
 ws :: Parser ()
 ws = skipMany (void (oneOf [' ', '\t', '\n']))
@@ -89,14 +98,23 @@ symbol = try . lexeme . string
 voidSymbol :: String -> Parser ()
 voidSymbol = void . symbol
 
+num :: Parser Int
+num = read <$> many1 (satisfy isDigit)
+
 arrow :: Parser ()
 arrow = voidSymbol "->"
+
+dir :: Parser Direction
+dir = Parser.left <|> Parser.right <|> Parser.stay
 
 left :: Parser Direction
 left = lexeme (void $ char 'L') >> return TMLeft
 
 right :: Parser Direction
 right = lexeme (void $ char 'R') >> return TMRight
+
+stay :: Parser Direction
+stay = lexeme (void $ char 'S') >> return TMStay
 
 lparan :: Parser ()
 lparan = lexeme $ void $ char '('

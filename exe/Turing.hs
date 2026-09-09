@@ -108,6 +108,29 @@ data KTuringMachineDesc = KTuringMachineDesc
   }
   deriving (Show)
 
+kOneMachineToTm :: KTuringMachineDesc -> TuringMachineDesc
+kOneMachineToTm
+  KTuringMachineDesc
+    { k = 1,
+      kStates = s,
+      kInputAlphabet = iA,
+      kTapeAlphabet = tA,
+      kTransitions = kT,
+      kStartState = st,
+      kBlank = kB,
+      kAcceptStates = kA
+    } =
+    TuringMachineDesc
+      { states = s,
+        inputAlphabet = iA,
+        tapeAlphabet = tA,
+        transitions = [((q, iChar), (q', oChar, oDir)) | ((q, [iChar]), (q', [oChar], [oDir])) <- kT],
+        startState = st,
+        blank = kB,
+        acceptStates = kA
+      }
+kOneMachineToTm _ = error "not a k=1 multitape machine"
+
 type KTransition = ((State, [TapeChar]), (State, [TapeChar], [Direction]))
 
 instance TuringMachine KTuringMachineDesc where
