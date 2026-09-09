@@ -38,6 +38,8 @@ d=[
 ```
 where M is prefixed by the value of k. The transition function is also modified to take a k-tuple for both input symbols, and output symbols and directions.
 
+For k-Tape Turing Machines only the first tape has the input. The other k-1 tapes start out blank.
+
 ## Command usage
 ```
 Turing Machine simulator
