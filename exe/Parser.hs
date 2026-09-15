@@ -59,29 +59,32 @@ tapeChar :: Parser TapeChar
 tapeChar = between tick tick $ noneOf "'"
 
 turingTransitions :: Int -> Parser [KTransition]
-turingTransitions k = between lbrack rbrack $ turingTransition k `sepBy` comma
+turingTransitions n = between lbrack rbrack $ turingTransition `sepBy` comma
   where
-    turingTransition :: Int -> Parser KTransition
-    turingTransition k = do
+    turingTransition :: Parser KTransition
+    turingTransition = do
       lparan
       inputState <- turingState
       comma
-      inputChars <- kListOrJustOne k tapeChar
+      inputChars <- kListOrJustOne n tapeChar
       rparan
       arrow
       lparan
       resultState <- turingState
       comma
-      resultChars <- kListOrJustOne k tapeChar 
+      resultChars <- kListOrJustOne n tapeChar 
       comma
-      resultDirs <- kListOrJustOne k dir 
+      resultDirs <- kListOrJustOne n dir 
       rparan
       return ((inputState, inputChars), (resultState, resultChars, resultDirs))
 
 kListOrJustOne :: Int -> Parser a -> Parser [a]
-kListOrJustOne k p = if k == 1 
-    then (: []) <$> p 
-    else reverse <$> between lparan rparan (flip (:) <$> count (k - 1) (p <* comma) <*> p)
+kListOrJustOne 1 p = (: []) <$> p
+kListOrJustOne n p =
+  between
+    lparan
+    rparan
+    ((\xs x -> xs ++ [x]) <$> count (n - 1) (p <* comma) <*> p)
 
 ws :: Parser ()
 ws = skipMany (void (oneOf [' ', '\t', '\n']))
